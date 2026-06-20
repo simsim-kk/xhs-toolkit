@@ -502,15 +502,26 @@ function formatStatNum(n){
   return String(n);
 }
 
+// 给 fetch 加超时保护，避免网络慢的时候卡住不显示
+function fetchWithTimeout(url, opts = {}, timeoutMs = 6000){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 async function initSiteStats(){
   // 用 sessionStorage 避免同一次访问里刷新页面重复计数
   const alreadyCounted = sessionStorage.getItem('xhs_toolkit_visited');
+
+  // 记录访问和拉取统计数字改为并行执行，不互相等待，缩短首屏显示时间
+  const visitPromise = alreadyCounted
+    ? Promise.resolve()
+    : fetchWithTimeout(`${WORKER_BASE}/api/visit`, { method: 'POST' })
+        .then(() => sessionStorage.setItem('xhs_toolkit_visited', '1'))
+        .catch(() => {}); // 记录访问失败不影响数字展示，安静忽略
+
   try{
-    if(!alreadyCounted){
-      await fetch(`${WORKER_BASE}/api/visit`, { method: 'POST' });
-      sessionStorage.setItem('xhs_toolkit_visited', '1');
-    }
-    const res = await fetch(`${WORKER_BASE}/api/stats/public`);
+    const res = await fetchWithTimeout(`${WORKER_BASE}/api/stats/public`);
     const data = await res.json();
     document.getElementById('stat-pageviews').textContent = formatStatNum(data.pageviews || 0);
     document.getElementById('stat-usage').textContent = formatStatNum(data.usageTotal || 0);
@@ -521,6 +532,8 @@ async function initSiteStats(){
     const panel = document.getElementById('stats-panel');
     if(panel) panel.style.display = 'none';
   }
+
+  visitPromise; // 访问计数在后台完成，不阻塞数字展示
 }
 // 用 DOMContentLoaded 确保所有 DOM 元素都已就绪，避免脚本位置/缓存导致的执行时机问题
 if (document.readyState === 'loading') {

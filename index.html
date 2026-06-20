@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>灵感铺 · 小红书创作三件套</title>
+<meta name="description" content="热点追踪、排版生成、爆款检测 —— 一站式小红书创作辅助工具">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.1.0/iconfont/tabler-icons.min.css">
+<style>
+:root{
+  --paper:#FBF8F3;
+  --paper-warm:#F5EEE3;
+  --ink:#2B2622;
+  --ink-soft:#6B6258;
+  --ink-faint:#A89E92;
+  --red:#E2406A;
+  --red-deep:#A82E52;
+  --red-pale:#FCE8EF;
+  --line:rgba(43,38,34,0.12);
+  --line-soft:rgba(43,38,34,0.07);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Noto Sans SC',-apple-system,sans-serif;
+  line-height:1.6;
+  min-height:100vh;
+}
+.serif{font-family:'Noto Serif SC',serif}
+
+/* ---------- texture ---------- */
+.grain{
+  position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0.025;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- header ---------- */
+header{
+  max-width:1040px;margin:0 auto;padding:64px 28px 40px;
+  position:relative;z-index:2;
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;color:var(--red-deep);
+  background:var(--red-pale);
+  padding:5px 14px;border-radius:20px;
+  margin-bottom:24px;font-weight:500;
+}
+.eyebrow i{font-size:14px}
+h1{
+  font-size:clamp(34px,5.5vw,56px);
+  font-weight:700;
+  letter-spacing:-0.01em;
+  line-height:1.15;
+  max-width:14ch;
+  margin-bottom:18px;
+}
+h1 .accent{color:var(--red)}
+.lede{
+  font-size:18px;color:var(--ink-soft);
+  max-width:46ch;
+  margin-bottom:8px;
+}
+.lede-note{
+  font-size:13px;color:var(--ink-faint);
+  margin-top:6px;
+}
+
+/* ---------- nav ---------- */
+.toolbar{
+  position:sticky;top:0;z-index:10;
+  background:rgba(251,248,243,0.92);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.toolbar-inner{
+  max-width:1040px;margin:0 auto;padding:0 28px;
+  display:flex;gap:4px;
+}
+.tab{
+  background:none;border:none;
+  padding:18px 20px 16px;
+  font-family:'Noto Sans SC',sans-serif;
+  font-size:15px;color:var(--ink-soft);
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  display:flex;align-items:center;gap:8px;
+  transition:color 0.15s;
+}
+.tab i{font-size:17px}
+.tab.active{color:var(--ink);border-bottom-color:var(--red);font-weight:500}
+.tab:hover:not(.active){color:var(--ink)}
+
+/* ---------- main ---------- */
+main{
+  max-width:1040px;margin:0 auto;padding:44px 28px 100px;
+  position:relative;z-index:2;
+}
+.panel{display:none}
+.panel.active{display:block;animation:fadeIn 0.35s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.panel-head{margin-bottom:28px}
+.panel-num{
+  font-family:'Noto Serif SC',serif;
+  font-size:13px;color:var(--ink-faint);
+  letter-spacing:0.06em;
+  margin-bottom:6px;
+}
+.panel-title{
+  font-family:'Noto Serif SC',serif;
+  font-size:26px;font-weight:600;
+  margin-bottom:8px;
+}
+.panel-desc{font-size:14px;color:var(--ink-soft);max-width:52ch}
+
+.card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:24px 26px;
+  margin-bottom:20px;
+}
+.label{
+  font-size:13px;color:var(--ink-soft);
+  margin-bottom:10px;display:block;font-weight:500;
+}
+textarea,input[type=text]{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:13px 15px;
+  font-size:14.5px;
+  font-family:'Noto Sans SC',sans-serif;
+  color:var(--ink);
+  background:var(--paper);
+  resize:vertical;outline:none;
+  transition:border-color 0.15s;
+}
+textarea:focus,input:focus{border-color:var(--red)}
+textarea::placeholder,input::placeholder{color:var(--ink-faint)}
+
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tag{
+  font-size:13px;padding:7px 16px;border-radius:20px;
+  cursor:pointer;border:1px solid var(--line);
+  color:var(--ink-soft);background:#fff;
+  font-family:'Noto Sans SC',sans-serif;
+  transition:all 0.15s;
+}
+.tag.selected{background:var(--red-pale);border-color:var(--red);color:var(--red-deep);font-weight:500}
+.tag:hover:not(.selected){border-color:var(--ink-faint)}
+
+.btn{
+  background:var(--ink);border:none;color:var(--paper);
+  border-radius:10px;padding:12px 24px;
+  font-size:14.5px;font-weight:500;cursor:pointer;
+  font-family:'Noto Sans SC',sans-serif;
+  display:inline-flex;align-items:center;gap:8px;
+  transition:all 0.15s;
+}
+.btn:hover{background:var(--red)}
+.btn:disabled{background:var(--line-soft);color:var(--ink-faint);cursor:not-allowed}
+.btn i{font-size:16px}
+
+.result-card{
+  background:var(--paper-warm);
+  border-radius:var(--radius);
+  padding:22px 24px;margin-top:18px;
+  font-size:14.5px;line-height:1.85;
+  white-space:pre-wrap;word-break:break-word;
+}
+.result-head{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:14px;
+}
+.result-label{font-size:13px;font-weight:500;color:var(--ink-soft)}
+.copy-btn{
+  font-size:12.5px;color:var(--ink-faint);background:none;border:none;
+  cursor:pointer;padding:5px 10px;font-family:'Noto Sans SC',sans-serif;
+  display:flex;align-items:center;gap:5px;border-radius:8px;
+}
+.copy-btn:hover{color:var(--ink);background:var(--line-soft)}
+
+.loading{
+  text-align:center;padding:48px 0;color:var(--ink-soft);font-size:14px;
+}
+.spinner{
+  display:inline-block;width:15px;height:15px;
+  border:2px solid var(--line);border-top-color:var(--red);
+  border-radius:50%;animation:spin 0.7s linear infinite;
+  vertical-align:-3px;margin-right:8px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* trends list */
+.trend-item{
+  display:flex;gap:16px;padding:18px 0;
+  border-bottom:1px solid var(--line-soft);
+}
+.trend-item:last-child{border-bottom:none}
+.trend-num{
+  font-family:'Noto Serif SC',serif;
+  font-size:20px;color:var(--red);font-weight:600;
+  min-width:28px;
+}
+.trend-title{font-size:15.5px;font-weight:500;margin-bottom:4px}
+.trend-desc{font-size:13px;color:var(--ink-soft);margin-bottom:8px;line-height:1.6}
+.hot-tag{
+  display:inline-block;font-size:11.5px;padding:3px 10px;
+  border-radius:10px;background:var(--red-pale);color:var(--red-deep);
+  margin-right:6px;margin-top:2px;
+}
+.update-note{font-size:12px;color:var(--ink-faint);margin-top:16px;text-align:center}
+
+/* score panel */
+.score-hero{
+  text-align:center;padding:32px 0;
+}
+.score-num{font-family:'Noto Serif SC',serif;font-size:48px;font-weight:700;color:var(--red)}
+.score-label{font-size:13px;color:var(--ink-soft);margin-top:2px}
+.meter-bar{
+  height:8px;background:var(--line-soft);border-radius:4px;
+  overflow:hidden;margin:16px auto 10px;max-width:240px;
+}
+.meter-fill{height:100%;border-radius:4px;background:var(--red);transition:width 0.7s ease;width:0%}
+.score-verdict{font-size:13.5px;color:var(--ink-soft)}
+
+.metric-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;margin-bottom:20px;
+}
+.metric-card{
+  background:var(--paper-warm);border-radius:10px;padding:14px 16px;
+}
+.metric-name{font-size:12px;color:var(--ink-faint);margin-bottom:4px}
+.metric-val{font-size:16px;font-weight:600;color:var(--ink)}
+
+footer{
+  max-width:1040px;margin:0 auto;padding:0 28px 60px;
+  font-size:12.5px;color:var(--ink-faint);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  position:relative;z-index:2;
+}
+footer a{color:var(--ink-soft);text-decoration:none}
+footer a:hover{color:var(--red)}
+
+@media(max-width:640px){
+  header{padding:44px 20px 28px}
+  main{padding:32px 20px 70px}
+  .toolbar-inner{padding:0 20px;overflow-x:auto}
+  .tab{padding:14px 14px 12px;font-size:14px;white-space:nowrap}
+  .card{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<header>
+  <span class="eyebrow"><i class="ti ti-sparkles" aria-hidden="true"></i>小红书创作辅助</span>
+  <h1 class="serif">灵感铺：选题、排版、<span class="accent">检测</span>三件套</h1>
+  <p class="lede">追热点、改文风、查爆款率——把一篇笔记从想法到发布的每一步都接住。</p>
+  <p class="lede-note">热点数据每日自动更新两次，排版与检测由 AI 实时生成</p>
+</header>
+
+<nav class="toolbar">
+  <div class="toolbar-inner">
+    <button class="tab active" data-tab="trends" onclick="switchTab('trends')">
+      <i class="ti ti-trending-up" aria-hidden="true"></i>热点追踪
+    </button>
+    <button class="tab" data-tab="format" onclick="switchTab('format')">
+      <i class="ti ti-layout" aria-hidden="true"></i>排版生成
+    </button>
+    <button class="tab" data-tab="score" onclick="switchTab('score')">
+      <i class="ti ti-chart-bar" aria-hidden="true"></i>爆款检测
+    </button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ============ 热点追踪 ============ -->
+  <section id="panel-trends" class="panel active">
+    <div class="panel-head">
+      <p class="panel-num serif">01 — Trending</p>
+      <h2 class="panel-title">今天适合写什么</h2>
+      <p class="panel-desc">选一个内容方向，看看当下值得切入的角度与配套话题标签。</p>
+    </div>
+
+    <div class="card">
+      <span class="label">内容方向</span>
+      <div class="row" id="niche-tags">
+        <button class="tag selected" data-val="美妆穿搭">美妆穿搭</button>
+        <button class="tag" data-val="生活方式">生活方式</button>
+        <button class="tag" data-val="美食探店">美食探店</button>
+        <button class="tag" data-val="旅行">旅行</button>
+        <button class="tag" data-val="文学读书">文学读书</button>
+        <button class="tag" data-val="职场">职场</button>
+        <button class="tag" data-val="情感">情感</button>
+        <button class="tag" data-val="健身">健身</button>
+        <button class="tag" data-val="数码科技">数码科技</button>
+        <button class="tag" data-val="亲子">亲子</button>
+      </div>
+      <div class="row" style="margin-top:18px;justify-content:flex-end">
+        <button class="btn" id="trend-btn" onclick="fetchTrends()">
+          <i class="ti ti-search" aria-hidden="true"></i>查看热点
+        </button>
+      </div>
+    </div>
+
+    <div id="trend-result" style="display:none">
+      <div id="trend-loading" class="loading" style="display:none">
+        <span class="spinner"></span>正在读取热点缓存...
+      </div>
+      <div class="card" id="trend-card" style="display:none">
+        <div id="trend-list"></div>
+      </div>
+      <div id="trend-updated" class="update-note"></div>
+    </div>
+  </section>
+
+  <!-- ============ 排版生成 ============ -->
+  <section id="panel-format" class="panel">
+    <div class="panel-head">
+      <p class="panel-num serif">02 — Formatting</p>
+      <h2 class="panel-title">把文字变成笔记</h2>
+      <p class="panel-desc">粘贴你写好的内容，选一个风格，AI 帮你加标题、分段、表情和话题标签。</p>
+    </div>
+
+    <div class="card">
+      <span class="label">原始内容</span>
+      <textarea id="format-input" rows="7" placeholder="例如：今天去了一家超好吃的日料，性价比很高，推荐给大家……&#10;&#10;随便写，不用管格式，AI 会处理排版。"></textarea>
+      <div class="row" style="margin-top:16px">
+        <span class="label" style="margin:0">风格</span>
+        <div class="row" id="style-tags" style="gap:8px">
+          <button class="tag selected" data-val="种草活泼">种草活泼</button>
+          <button class="tag" data-val="知性干货">知性干货</button>
+          <button class="tag" data-val="文艺清冷">文艺清冷</button>
+          <button class="tag" data-val="搞笑接地气">搞笑接地气</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:18px;justify-content:flex-end">
+        <button class="btn" id="format-btn" onclick="formatContent()">
+          <i class="ti ti-wand" aria-hidden="true"></i>一键排版
+        </button>
+      </div>
+    </div>
+
+    <div id="format-loading" class="loading" style="display:none">
+      <span class="spinner"></span>正在排版中...
+    </div>
+    <div id="format-result" style="display:none" class="result-card">
+      <div class="result-head">
+        <span class="result-label">排版结果</span>
+        <button class="copy-btn" onclick="copyResult('format-text')">
+          <i class="ti ti-copy" aria-hidden="true"></i>复制
+        </button>
+      </div>
+      <div id="format-text"></div>
+    </div>
+  </section>
+
+  <!-- ============ 爆款检测 ============ -->
+  <section id="panel-score" class="panel">
+    <div class="panel-head">
+      <p class="panel-num serif">03 — Scoring</p>
+      <h2 class="panel-title">发布前的最后一道把关</h2>
+      <p class="panel-desc">从标题吸引力、内容结构、话题契合、互动引导四个维度评估笔记的爆款潜力。</p>
+    </div>
+
+    <div class="card">
+      <span class="label">标题</span>
+      <input type="text" id="score-title" placeholder="例如：月薪5000在上海，我是怎么做到住大平层的" style="margin-bottom:16px">
+      <span class="label">正文</span>
+      <textarea id="score-content" rows="6" placeholder="粘贴笔记正文……"></textarea>
+      <div class="row" style="margin-top:18px;justify-content:flex-end">
+        <button class="btn" id="score-btn" onclick="scoreContent()">
+          <i class="ti ti-stars" aria-hidden="true"></i>检测爆款率
+        </button>
+      </div>
+    </div>
+
+    <div id="score-loading" class="loading" style="display:none">
+      <span class="spinner"></span>正在分析笔记...
+    </div>
+
+    <div id="score-result" style="display:none">
+      <div class="card score-hero">
+        <div class="score-num" id="score-num">--</div>
+        <div class="score-label">爆款潜力指数</div>
+        <div class="meter-bar"><div class="meter-fill" id="score-bar"></div></div>
+        <div class="score-verdict" id="score-verdict"></div>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-card"><div class="metric-name">标题吸引力</div><div class="metric-val" id="m1">--</div></div>
+        <div class="metric-card"><div class="metric-name">内容结构</div><div class="metric-val" id="m2">--</div></div>
+        <div class="metric-card"><div class="metric-name">话题热度契合</div><div class="metric-val" id="m3">--</div></div>
+        <div class="metric-card"><div class="metric-name">互动引导</div><div class="metric-val" id="m4">--</div></div>
+      </div>
+      <div class="card">
+        <span class="label">优化建议</span>
+        <div id="score-advice" style="font-size:14.5px;line-height:1.85;white-space:pre-wrap"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>灵感铺 · 一个小红书创作辅助工具</span>
+  <span>数据与生成内容仅供参考，请结合实际判断</span>
+</footer>
+
+<script>
+// 替换成你自己部署的 Cloudflare Worker 地址
+const WORKER_BASE = 'https://xhs-trends-worker.huocassie1206.workers.dev';
+
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+document.querySelectorAll('#niche-tags .tag').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('#niche-tags .tag').forEach(x=>x.classList.remove('selected'));
+    t.classList.add('selected');
+  };
+});
+document.querySelectorAll('#style-tags .tag').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('#style-tags .tag').forEach(x=>x.classList.remove('selected'));
+    t.classList.add('selected');
+  };
+});
+
+function formatUpdatedAt(iso){
+  try{
+    const d = new Date(iso);
+    return d.toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  }catch(e){ return ''; }
+}
+
+async function fetchTrends(){
+  const niche = document.querySelector('#niche-tags .tag.selected')?.dataset.val || '美妆穿搭';
+  const btn = document.getElementById('trend-btn');
+  btn.disabled = true;
+  document.getElementById('trend-result').style.display = 'block';
+  document.getElementById('trend-loading').style.display = 'block';
+  document.getElementById('trend-card').style.display = 'none';
+  document.getElementById('trend-updated').textContent = '';
+
+  try{
+    const res = await fetch(`${WORKER_BASE}/api/trends?niche=${encodeURIComponent(niche)}`);
+    const data = await res.json();
+    if(!res.ok || data.error) throw new Error(data.error || ('请求失败 '+res.status));
+
+    const list = document.getElementById('trend-list');
+    list.innerHTML = (data.trends||[]).map((t,i)=>`
+      <div class="trend-item">
+        <div class="trend-num serif">${String(i+1).padStart(2,'0')}</div>
+        <div>
+          <div class="trend-title">${t.title}</div>
+          <div class="trend-desc">${t.why} · 角度：${t.angle}</div>
+          <div>${(t.tags||[]).map(tag=>`<span class="hot-tag">#${tag}</span>`).join('')}</div>
+        </div>
+      </div>`).join('');
+
+    document.getElementById('trend-card').style.display = 'block';
+    if(data.updatedAt){
+      document.getElementById('trend-updated').textContent = '数据更新于 '+formatUpdatedAt(data.updatedAt)+'，每天自动刷新两次';
+    }
+  }catch(e){
+    document.getElementById('trend-card').style.display = 'block';
+    document.getElementById('trend-list').innerHTML = '<p style="color:var(--ink-faint);font-size:14px;padding:8px 0">获取失败：'+e.message+'</p>';
+  }
+  document.getElementById('trend-loading').style.display = 'none';
+  btn.disabled = false;
+}
+
+async function formatContent(){
+  const content = document.getElementById('format-input').value.trim();
+  const style = document.querySelector('#style-tags .tag.selected')?.dataset.val || '种草活泼';
+  if(!content){ alert('请输入笔记内容'); return; }
+  const btn = document.getElementById('format-btn');
+  btn.disabled = true;
+  document.getElementById('format-loading').style.display = 'block';
+  document.getElementById('format-result').style.display = 'none';
+
+  try{
+    const res = await fetch(`${WORKER_BASE}/api/format`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ content, style })
+    });
+    const data = await res.json();
+    if(!res.ok || data.error) throw new Error(data.error || ('请求失败 '+res.status));
+    document.getElementById('format-text').textContent = data.result;
+    document.getElementById('format-result').style.display = 'block';
+  }catch(e){
+    document.getElementById('format-result').style.display = 'block';
+    document.getElementById('format-text').textContent = '排版失败：'+e.message;
+  }
+  document.getElementById('format-loading').style.display = 'none';
+  btn.disabled = false;
+}
+
+async function scoreContent(){
+  const title = document.getElementById('score-title').value.trim();
+  const content = document.getElementById('score-content').value.trim();
+  if(!title && !content){ alert('请至少输入标题或正文'); return; }
+  const btn = document.getElementById('score-btn');
+  btn.disabled = true;
+  document.getElementById('score-loading').style.display = 'block';
+  document.getElementById('score-result').style.display = 'none';
+
+  try{
+    const res = await fetch(`${WORKER_BASE}/api/score`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title, content })
+    });
+    const d = await res.json();
+    if(!res.ok || d.error) throw new Error(d.error || ('请求失败 '+res.status));
+
+    document.getElementById('score-num').textContent = d.total;
+    document.getElementById('score-bar').style.width = d.total+'%';
+    document.getElementById('score-verdict').textContent = d.verdict;
+    document.getElementById('m1').textContent = d.title_score+' 分';
+    document.getElementById('m2').textContent = d.structure_score+' 分';
+    document.getElementById('m3').textContent = d.topic_score+' 分';
+    document.getElementById('m4').textContent = d.engagement_score+' 分';
+    document.getElementById('score-advice').textContent = d.advice;
+    document.getElementById('score-result').style.display = 'block';
+  }catch(e){
+    document.getElementById('score-result').style.display = 'block';
+    document.getElementById('score-advice').textContent = '分析失败：'+e.message;
+  }
+  document.getElementById('score-loading').style.display = 'none';
+  btn.disabled = false;
+}
+
+function copyResult(id){
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = event.target.closest('.copy-btn');
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i>已复制';
+    setTimeout(()=>{ btn.innerHTML = original; }, 1500);
+  });
+}
+</script>
+
+</body>
+</html>

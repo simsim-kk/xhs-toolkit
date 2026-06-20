@@ -522,7 +522,13 @@ async function initSiteStats(){
     if(panel) panel.style.display = 'none';
   }
 }
-initSiteStats();
+// 用 DOMContentLoaded 确保所有 DOM 元素都已就绪，避免脚本位置/缓存导致的执行时机问题
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSiteStats);
+} else {
+  // 如果脚本执行时 DOM 已经加载完成（比如缓存场景），直接调用
+  initSiteStats();
+}
 
 document.querySelectorAll('#niche-tags .tag').forEach(t=>{
   t.onclick=()=>{

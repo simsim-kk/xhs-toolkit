@@ -9,6 +9,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.1.0/iconfont/tabler-icons.min.css">
+<!-- Cloudflare Web Analytics：统计页面浏览量（PV/UV/地区/设备）
+     去 https://dash.cloudflare.com → Analytics & Logs → Web Analytics 注册站点，
+     拿到 token 后填进下面的 data-cf-beacon，否则这段不会生效（也不影响页面正常使用）。 -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "在这里填入你的token"}'></script>
 <style>
 :root{
   --paper:#FBF8F3;
@@ -243,13 +247,57 @@ textarea::placeholder,input::placeholder{color:var(--ink-faint)}
 .metric-val{font-size:16px;font-weight:600;color:var(--ink)}
 
 footer{
-  max-width:1040px;margin:0 auto;padding:0 28px 60px;
-  font-size:12.5px;color:var(--ink-faint);
-  display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  max-width:1040px;margin:0 auto;padding:0 28px 24px;
   position:relative;z-index:2;
 }
-footer a{color:var(--ink-soft);text-decoration:none}
-footer a:hover{color:var(--red)}
+.footer-meta{
+  font-size:12.5px;color:var(--ink-faint);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  margin-bottom:20px;
+}
+.footer-meta a{color:var(--ink-soft);text-decoration:none}
+.footer-meta a:hover{color:var(--red)}
+
+/* 站点统计面板 */
+.stats-panel{
+  border-top:1px solid var(--line);
+  padding-top:20px;
+  display:flex;gap:28px;flex-wrap:wrap;
+  align-items:baseline;
+}
+.stat-item{display:flex;align-items:baseline;gap:7px}
+.stat-num{
+  font-family:'Noto Serif SC',serif;
+  font-size:20px;font-weight:600;color:var(--ink);
+}
+.stat-num.loading-dot::after{
+  content:'';display:inline-block;width:5px;height:5px;
+  border-radius:50%;background:var(--ink-faint);
+  margin-left:2px;animation:pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:1}}
+.stat-label{font-size:12.5px;color:var(--ink-faint)}
+
+/* 水印 */
+.watermark{
+  margin-top:28px;padding-top:18px;
+  border-top:1px solid var(--line-soft);
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px;
+}
+.watermark-sig{
+  font-family:'Noto Serif SC',serif;
+  font-size:13px;color:var(--ink-faint);
+  letter-spacing:0.04em;
+  display:flex;align-items:center;gap:6px;
+}
+.watermark-sig i{font-size:13px;color:var(--red)}
+.watermark-year{font-size:11.5px;color:var(--ink-faint)}
+
+@media(max-width:640px){
+  .stats-panel{gap:20px}
+  .watermark{flex-direction:column;align-items:flex-start}
+}
 
 @media(max-width:640px){
   header{padding:44px 20px 28px}
@@ -415,8 +463,26 @@ footer a:hover{color:var(--red)}
 </main>
 
 <footer>
-  <span>灵感铺 · 一个小红书创作辅助工具</span>
-  <span>数据与生成内容仅供参考，请结合实际判断</span>
+  <div class="footer-meta">
+    <span>灵感铺 · 一个小红书创作辅助工具</span>
+    <span>数据与生成内容仅供参考，请结合实际判断</span>
+  </div>
+
+  <div class="stats-panel" id="stats-panel">
+    <div class="stat-item">
+      <span class="stat-num loading-dot" id="stat-pageviews">--</span>
+      <span class="stat-label">次浏览</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num loading-dot" id="stat-usage">--</span>
+      <span class="stat-label">次功能使用</span>
+    </div>
+  </div>
+
+  <div class="watermark">
+    <span class="watermark-sig serif"><i class="ti ti-feather" aria-hidden="true"></i>by simsim</span>
+    <span class="watermark-year">© 2026</span>
+  </div>
 </footer>
 
 <script>
@@ -428,6 +494,35 @@ function switchTab(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
 }
+
+// ---- 站点统计：记一次访问 + 拉取浏览量/使用量展示在底部 ----
+function formatStatNum(n){
+  if(n >= 10000) return (n/10000).toFixed(1).replace(/\.0$/,'') + 'w';
+  if(n >= 1000) return (n/1000).toFixed(1).replace(/\.0$/,'') + 'k';
+  return String(n);
+}
+
+async function initSiteStats(){
+  // 用 sessionStorage 避免同一次访问里刷新页面重复计数
+  const alreadyCounted = sessionStorage.getItem('xhs_toolkit_visited');
+  try{
+    if(!alreadyCounted){
+      await fetch(`${WORKER_BASE}/api/visit`, { method: 'POST' });
+      sessionStorage.setItem('xhs_toolkit_visited', '1');
+    }
+    const res = await fetch(`${WORKER_BASE}/api/stats/public`);
+    const data = await res.json();
+    document.getElementById('stat-pageviews').textContent = formatStatNum(data.pageviews || 0);
+    document.getElementById('stat-usage').textContent = formatStatNum(data.usageTotal || 0);
+    document.getElementById('stat-pageviews').classList.remove('loading-dot');
+    document.getElementById('stat-usage').classList.remove('loading-dot');
+  }catch(e){
+    // 统计数据加载失败不影响主功能，安静地隐藏面板即可
+    const panel = document.getElementById('stats-panel');
+    if(panel) panel.style.display = 'none';
+  }
+}
+initSiteStats();
 
 document.querySelectorAll('#niche-tags .tag').forEach(t=>{
   t.onclick=()=>{
